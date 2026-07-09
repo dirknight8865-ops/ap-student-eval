@@ -592,7 +592,7 @@ function renderStudentTree() {
   for (var si = 0; si < keys.length; si++) {
     var sn = keys[si];
     var subs = students[sn];
-    h += '<div class="student-node"><div class="student-header" style="cursor:pointer;" onclick="toggleSubList(this)"><div><span class="name" data-student="+esc(sn)+" style="cursor:pointer;" onclick="showStudentModal(this.dataset.student)">'+esc(sn)+'</span></div><button class="btn-icon danger" onclick="event.stopPropagation();deleteStudent(\''+esc(sn)+'\')">X</button></div><div class="subject-list">';
+    h += '<div class="student-node"><div class="student-header" style="cursor:pointer;" onclick="toggleSubList(this)"><div><span class="name" data-student="' + esc(sn) + '" style="cursor:pointer;" onclick="showStudentModal(this.dataset.student)">'+esc(sn)+'</span></div><button class="btn-icon danger" onclick="event.stopPropagation();deleteStudent(\''+esc(sn)+'\')">X</button></div><div class="subject-list">';
     for (var sj in subs) {
       if (!subs.hasOwnProperty(sj) || sj === "cls") continue;
       if (currentFilter && sj !== currentFilter) continue;
