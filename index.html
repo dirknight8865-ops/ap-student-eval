@@ -1142,9 +1142,7 @@ function modalSaveSubject() {
   var actualVal = actualInp.value !== '' ? parseInt(actualInp.value, 10) : null;
   students[modalCurrentStudent][modalCurrentSubject] = {s: scores, a: actualVal ? actualVal*20 : null};
   saveData();
-  showStudentModal(modalCurrentStudent);
-  modalEditSubject(modalCurrentSubject);
-  renderStudentTree();
+  closeStudentModal();
   renderStudentSelect();
 }
 
