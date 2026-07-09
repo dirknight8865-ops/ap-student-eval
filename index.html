@@ -678,17 +678,34 @@ function renderFormula() {
     container.innerHTML = '<div class="empty-state"><div style="font-size:36px;">📊</div><p>添加数据后显示预测结果</p></div>';
     return;
   }
-  var PENALTY_RATES = [0.10, 0.20, 0.40, 0.40, 0.20, 0.10];
-  var h = '<div class="formula-card" style="margin-bottom:12px;"><h4 style="font-size:14px;margin-bottom:6px;">预测公式</h4>';
+  // 根据所选科目动态显示公式
+  var courseName = analysisFilter || '';
+  var fmt = courseName && COURSE_FORMULAS[courseName] ? COURSE_FORMULAS[courseName] : null;
+  var PR = fmt ? fmt.penaltyRates : [0.10, 0.20, 0.40, 0.40, 0.20, 0.10];
+  var hasSpec = fmt ? fmt.hasSpecial : true;
+  var courseLabel = courseName ? esc(courseName) : '全部科目（混合公式）';
+  
+  var h = '<div class="formula-card" style="margin-bottom:12px;"><h4 style="font-size:14px;margin-bottom:6px;">预测公式 \u2014 ' + courseLabel + '</h4>';
   h += '<p><code>base = (六项能力之和) / 6</code></p>';
-  h += '<p style="font-weight:600;margin-top:6px;">Step 2 - 及格线检查</p>';
+  h += '<p style="font-weight:600;margin-top:6px;">Step 2 - 及格线检查（3分合格）</p>';
   h += '<p><code>penalty = Σ max(0, 3 - xi) * penalty_i</code></p>';
-  h += '<table style="width:100%;font-size:13px;border-collapse:collapse;margin:6px 0;"><tr><td>基础能力</td><td>x0.40</td></tr><tr><td>英语能力</td><td>x0.40</td></tr><tr><td>学习自驱力</td><td>x0.20</td></tr><tr><td>考试能力</td><td>x0.20</td></tr><tr><td>学习态度</td><td>x0.10</td></tr><tr><td>抗压能力</td><td>x0.10</td></tr></table>';
-  h += '<p style="font-weight:600;margin-top:6px;">Step 3 - 特殊修正</p>';
-  h += '<p><code>if (基础能力 >= 4 且 学习态度 <= 3) penalty += 0.4</code></p>';
-  h += '<p style="font-size:12px;color:var(--text2);">=> 有能力但不努力，实际表现会低于预期</p>';
-  h += '<p style="font-weight:600;margin-top:6px;">Step 4 - 最终得分</p>';
+  h += '<table style="width:100%;font-size:13px;border-collapse:collapse;margin:6px 0;">';
+  var abilityLabels = ['学习态度','学习自驱力','基础能力','英语能力','考试能力','抗压能力'];
+  for (var ri = 0; ri < 6; ri++) {
+    var imp = PR[ri] >= 0.30 ? '（最重要）' : PR[ri] >= 0.15 ? '（重要）' : '（有影响）';
+    h += '<tr><td>' + abilityLabels[ri] + '</td><td>x' + PR[ri].toFixed(2) + '</td><td style="font-size:11px;color:var(--text2);">' + imp + '</td></tr>';
+  }
+  h += '</table>';
+  if (hasSpec) {
+    h += '<p style="font-weight:600;margin-top:6px;">Step 3 - 特殊修正</p>';
+    h += '<p><code>if (基础能力 >= 4 且 学习态度 <= 3) penalty += 0.4</code></p>';
+    h += '<p style="font-size:12px;color:var(--text2);">=> 有能力但不努力，实际表现会低于预期</p>';
+    h += '<p style="font-weight:600;margin-top:6px;">Step 4 - 最终得分</p>';
+  } else {
+    h += '<p style="font-weight:600;margin-top:6px;">Step 3 - 最终得分</p>';
+  }
   h += '<p><code>AP得分 = max(1, min(5, round(base - penalty)))</code></p></div>';
+  
   var shortfallStats = [0,0,0,0,0,0];
   var totalCount = 0;
   var detailRows = '';
@@ -698,15 +715,18 @@ function renderFormula() {
     var pred = predictAP(s5, p.subject);
     totalCount++;
     var penParts = [];
+    // 使用该科目自己的罚率计算扣分明细
+    var fmtP = COURSE_FORMULAS[p.subject];
+    var prP = fmtP ? fmtP.penaltyRates : PR;
     for (var i = 0; i < 6; i++) {
       if (s5[i] < 3) {
         var d = 3 - s5[i];
-        var c = d * PENALTY_RATES[i];
+        var c = d * prP[i];
         penParts.push(esc(ABILITIES[i]) + '(' + s5[i] + '分-' + c.toFixed(2) + ')');
         shortfallStats[i]++;
       }
     }
-    if (s5[2] >= 4 && s5[0] <= 3) {
+    if (fmtP && fmtP.hasSpecial && s5[2] >= 4 && s5[0] <= 3) {
       penParts.push('特殊-0.40');
     }
     detailRows += '<tr><td style="text-align:left;">' + esc(p.label) + '</td><td>' + s5.join('/') + '</td><td>' + pred.base.toFixed(2) + '</td><td style="text-align:left;font-size:11px;">' + (penParts.length ? penParts.join(' + ') : '-') + '</td><td>' + pred.penalty.toFixed(2) + '</td><td>' + pred.final.toFixed(2) + '</td><td><span class="pred-score ' + predClass5(pred.result) + '" style="font-size:14px;">' + pred.result + '</span></td></tr>';
