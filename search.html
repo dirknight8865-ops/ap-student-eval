@@ -33,7 +33,7 @@ header a:hover { text-decoration: underline; }
 .card .meta { font-size: 13px; color: var(--text2); margin-bottom: 10px; }
 .sub { background: #f8fafc; border-radius: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid var(--border); }
 .sub:last-child { margin-bottom: 0; }
-.sh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.sh { display: flex; align-items: center; margin-bottom: 8px; }
 .sn { font-size: 14px; font-weight: 600; }
 .dots { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 .d { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 4px; font-weight: 700; font-size: 12px; color: #fff; }
@@ -41,7 +41,11 @@ header a:hover { text-decoration: underline; }
 .d-5 { background: var(--green); } .d-4 { background: var(--accent); } .d-3 { background: var(--amber); } .d-2 { background: #f97316; } .d-1 { background: var(--red); }
 .pd { display: inline-flex; width: 28px; height: 28px; border-radius: 50%; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #fff; }
 .pd-5 { background: var(--green); } .pd-4 { background: var(--accent); } .pd-3 { background: var(--amber); } .pd-2 { background: #f97316; } .pd-1 { background: var(--red); }
-.info { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.sb { display: flex; gap: 12px; align-items: flex-start; }
+.scores { flex: 2; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.rpanel { flex: 1; text-align: right; min-width: 100px; }
+.rl { font-size: 13px; margin-bottom: 3px; }
+.dn { font-size: 12px; color: var(--text2); margin-right: 8px; }
 .empty { text-align: center; padding: 60px 20px; color: #94a3b8; font-size: 15px; }
 .empty .icon { font-size: 48px; margin-bottom: 10px; }
 </style>
@@ -51,7 +55,7 @@ header a:hover { text-decoration: underline; }
 <header>
   <h1>🔍 AP 成绩查询</h1>
   <p class="sub">按学生姓名或科目查询成绩</p>
-  <a href="index.html">→ 后台管理</a>
+  
 </header>
 
 <div class="search-section">
@@ -63,7 +67,7 @@ header a:hover { text-decoration: underline; }
     <input type="text" id="searchInput" placeholder="输入学生姓名..." autocomplete="off">
     <button onclick="search()">🔍 搜索</button>
   </div>
-  <div id="filterBar" class="filter-bar"></div>
+  
   <div id="stats" class="stats"></div>
 </div>
 <div id="results" class="results"></div>
@@ -86,7 +90,6 @@ function load() {
     students = JSON.parse(JSON.stringify(ED));
     localStorage.setItem('sra_v4_ap', JSON.stringify(students));
   }
-  updateFilter();
   updateStats();
 }
 
@@ -166,11 +169,9 @@ function search() {
             var s5 = gs(sc).map(to5);
             var p = pred(s5, sj);
             var a = ga(sc);
-            html += '<div class="sub"><div class="sh"><span class="sn">' + esc(sj) + '</span><span class="pd pd-' + p + '">' + p + '</span></div><div class="dots">';
-            for (var i=0;i<6;i++) html += '<span class="d d-' + s5[i] + '">' + s5[i] + '</span><span class="dn">' + A[i].slice(0,2) + '</span>';
-            html += '</div><div class="info">\u9884\u6d4bAP: <strong>' + p + '</strong> | \u5b9e\u9645AP: ';
-            html += (a != null ? '<strong style="color:var(--accent)">' + a + '</strong>' : '<span style="color:#94a3b8;">\u672a\u5f55\u5165</span>');
-            html += '</div></div>';
+            html += '<div class="sub"><div class="sh"><span class="sn">' + esc(sj) + '</span></div><div class="sb"><div class="scores">';
+            for (var i=0;i<6;i++) html += '<span class="d d-' + s5[i] + '">' + s5[i] + '</span><span class="dn">' + A[i] + '</span>';
+            html += '</div><div class="rpanel"><div class="rl">\u8bc4\u4f30\u5f97\u5206: <strong>' + p + '</strong></div><div class="rl">\u5b9e\u9645\u5f97\u5206: <strong>' + (a != null ? a : '<span style=\"color:#94a3b8;\">\u672a\u5f55\u5165</span>') + '</strong></div></div></div></div>';
           }
           html += '<div class="meta">' + cnt + ' \u4e2a\u79d1\u76ee</div></div>';
         }
@@ -203,11 +204,9 @@ function search() {
       for (var ri=0;ri<rows.length;ri++) {
         var r = rows[ri];
         var clsTag = r.cls ? ' <span style="font-size:11px;color:var(--text2);">[' + r.cls + ']</span>' : '';
-        html += '<div class="sub"><div class="sh"><span class="sn">#' + (ri+1) + ' ' + esc(r.name) + clsTag + '</span><span class="pd pd-' + r.pred + '">' + r.pred + '</span></div><div class="dots">';
-        for (var i=0;i<6;i++) html += '<span class="d d-' + r.scores[i] + '">' + r.scores[i] + '</span><span class="dn">' + A[i].slice(0,2) + '</span>';
-        html += '</div><div class="info">\u7efc\u5408: ' + r.avg.toFixed(1) + ' | \u9884\u6d4bAP: <strong>' + r.pred + '</strong> | \u5b9e\u9645AP: ';
-        html += (r.actual != null ? '<strong style="color:var(--accent)">' + r.actual + '</strong>' : '<span style="color:#94a3b8;">-</span>');
-        html += '</div></div>';
+        html += '<div class="sub"><div class="sh"><span class="sn">#' + (ri+1) + ' ' + esc(r.name) + clsTag + '</span></div><div class="sb"><div class="scores">';
+        for (var i=0;i<6;i++) html += '<span class="d d-' + r.scores[i] + '">' + r.scores[i] + '</span><span class="dn">' + A[i] + '</span>';
+        html += '</div><div class="rpanel"><div class="rl">\u8bc4\u4f30\u5f97\u5206: <strong>' + r.pred + '</strong></div><div class="rl">\u5b9e\u9645\u5f97\u5206: <strong>' + (r.actual != null ? r.actual : '<span style=\"color:#94a3b8;\">\u672a\u5f55\u5165</span>') + '</strong></div></div></div></div>';
       }
       html += '</div>';
       el.innerHTML = html;
