@@ -182,7 +182,15 @@ table.data td:first-child, table.data th:first-child { text-align: left; }
         <div id="analysisOverview" class="empty-state"><div style="font-size:36px;">📊</div><p>添加数据后自动分析</p></div>
       </div>
       <div class="card">
-        <h2>详细分析</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <h2 style="margin:0;">详细分析</h2>
+          <select id="analysisFilter" onchange="filterAnalysis()" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;outline:none;">
+            <option value="">全部科目</option>
+            <option value="AP Physics C: Mechanics">AP Physics C: Mechanics</option>
+            <option value="AP Physics C: Electricity & Magnetism">AP Physics C: E&amp;M</option>
+            <option value="AP Calculus BC">AP Calculus BC</option>
+          </select>
+        </div>
         <div class="tabs">
           <button class="tab-btn active" onclick="switchTab('formula',this)">预测公式</button>
           <button class="tab-btn" onclick="switchTab('ranking',this)">排名</button>
@@ -269,6 +277,15 @@ var currentStudent = null;
 var editingSubject = null;
 var barChart = null, radarChart = null, clusterRadarChart = null, standardRadarChart = null;
 var currentFilter = "";
+var analysisFilter = "";
+
+function getAnalysisPoints() {
+  var pts = getDataPoints();
+  if (analysisFilter) {
+    pts = pts.filter(function(p) { return p.subject === analysisFilter; });
+  }
+  return pts;
+}
 
 function init() {
   try {
@@ -316,6 +333,17 @@ function filterBySubject() {
   var el = document.getElementById("courseFilter");
   currentFilter = el ? el.value : "";
   renderStudentTree();
+}
+
+function filterAnalysis() {
+  var el = document.getElementById("analysisFilter");
+  analysisFilter = el ? el.value : "";
+  // Re-render the active tab
+  var activeTab = document.querySelector('.tab-btn.active');
+  if (activeTab) {
+    var tabName = activeTab.getAttribute('onclick').match(/'([^']+)'/)[1];
+    switchTab(tabName, activeTab);
+  }
 }
 
 function renderStudentSelect() {
@@ -645,7 +673,7 @@ function switchTab(name, btn) {
 // ═══════════════════════════════════════════
 function renderFormula() {
   var container = document.getElementById('tab-formula');
-  var points = getDataPoints();
+  var points = getAnalysisPoints();
   if (points.length === 0) {
     container.innerHTML = '<div class="empty-state"><div style="font-size:36px;">📊</div><p>添加数据后显示预测结果</p></div>';
     return;
@@ -698,7 +726,7 @@ function renderFormula() {
 // ═══════════════════════════════════════════
 function renderOverview() {
   var container = document.getElementById('analysisOverview');
-  var points = getDataPoints();
+  var points = getAnalysisPoints();
   if (points.length === 0) {
     container.innerHTML = '<div class="empty-state" style="padding:20px;"><div style="font-size:36px;">📊</div><p>添加数据后分析</p></div>';
     return;
@@ -748,7 +776,7 @@ function renderOverview() {
 // ═══════════════════════════════════════════
 function renderRanking() {
   var container = document.getElementById('tab-ranking');
-  var points = getDataPoints();
+  var points = getAnalysisPoints();
   if (points.length===0) { container.innerHTML='<div class="empty-state"><p>暂无数据</p></div>'; return; }
   var sorted = points.slice().sort(function(a,b){var sa=0,sb=0;for(var qi=0;qi<6;qi++){sa+=a.vector[qi];sb+=b.vector[qi];}return sb-sa;});
   var h = '<div class="table-wrap"><table class="data"><thead><tr><th>排名</th><th>学生</th><th>科目</th>';
@@ -776,7 +804,7 @@ function renderRanking() {
 // ═══════════════════════════════════════════
 function renderRadar() {
   var container = document.getElementById('tab-radar');
-  var points = getDataPoints();
+  var points = getAnalysisPoints();
   if (points.length===0) { container.innerHTML='<div class="empty-state"><p>暂无数据</p></div>'; return; }
   var si = parseInt(container.dataset.selectedIdx||0);
   var opts = '';
@@ -789,7 +817,7 @@ function renderRadar() {
 function drawRadar() {
   var ctx = document.getElementById('radarChart');
   if (!ctx) return;
-  var points = getDataPoints();
+  var points = getAnalysisPoints();
   var si = parseInt(document.getElementById('tab-radar').dataset.selectedIdx||0);
   var main = points[si]; if (!main) return;
   var datasets = [{ label: main.label, data: main.vector.map(function(v){return v/20;}), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.15)', pointBackgroundColor: '#3b82f6', pointRadius: 4, borderWidth: 2 }];
@@ -807,7 +835,7 @@ function drawRadar() {
 // ═══════════════════════════════════════════
 function renderCluster() {
   var container = document.getElementById('tab-cluster');
-  var pts = getDataPoints();
+  var pts = getAnalysisPoints();
   var kSel = document.getElementById('clusterK');
   var k = kSel ? parseInt(kSel.value, 10) : 3;
   if (pts.length < 2) { container.innerHTML='<div class="empty-state"><div style="font-size:36px;">📐</div><p>至少需要2条数据</p></div>'; return; }
@@ -853,7 +881,7 @@ function renderCluster() {
 // ═══════════════════════════════════════════
 function renderStandard() {
   var container = document.getElementById('tab-standard');
-  var pts = getDataPoints();
+  var pts = getAnalysisPoints();
   if (pts.length<3) { container.innerHTML='<div class="empty-state"><div style="font-size:36px;">📏</div><p>至少3条数据</p></div>'; return; }
   var result = runClustering();
   if (!result) { container.innerHTML='<div class="empty-state"><p>请先在聚类模型中运行</p></div>'; return; }
@@ -895,7 +923,7 @@ function renderStandard() {
 // ═══════════════════════════════════════════
 function renderInsights() {
   var container = document.getElementById('tab-insights');
-  var pts = getDataPoints();
+  var pts = getAnalysisPoints();
   if (pts.length===0) { container.innerHTML='<div class="empty-state"><p>暂无数据</p></div>'; return; }
   var h='';
   for (var sn in students) {
