@@ -1,4 +1,982 @@
 <!DOCTYPE html>
-<html><head><meta http-equiv="refresh" content="0;url=search.html"></head>
-<body><a href="search.html">学生查询页</a> | <a href="admin.html">管理页</a></body>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AP Physics C 能力评估系统</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f1f5f9; --card: #fff; --accent: #3b82f6; --accent-h: #2563eb;
+  --text: #0f172a; --text2: #475569; --border: #e2e8f0; --radius: 10px;
+  --green: #22c55e; --red: #ef4444; --amber: #f59e0b; --shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+.app { max-width: 1440px; margin: 0 auto; padding: 24px 20px 60px; }
+header { margin-bottom: 24px; }
+header h1 { font-size: 26px; font-weight: 700; letter-spacing: -.3px; }
+header p { color: var(--text2); font-size: 15px; margin-top: 2px; }
+header .tag { display: inline-block; font-size: 12px; background: var(--accent); color: #fff; padding: 2px 10px; border-radius: 12px; margin-left: 8px; vertical-align: middle; }
+.layout { display: grid; grid-template-columns: 420px 1fr; gap: 24px; align-items: start; }
+@media (max-width: 1050px) { .layout { grid-template-columns: 1fr; } }
+.card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; border: 1px solid var(--border); }
+.card h2 { font-size: 16px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.card h3 { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--text2); }
+.form-row { margin-bottom: 10px; }
+.form-row label { display: block; font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 4px; }
+.form-row input, .form-row select { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 14px; outline: none; }
+.form-row input:focus, .form-row select:focus { border-color: var(--accent); }
+.form-inline { display: flex; gap: 6px; align-items: flex-end; }
+.form-inline > *:first-child { flex: 1; }
+.btn { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 8px 16px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn:hover { background: var(--accent-h); }
+.btn-outline { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+.btn-outline:hover { background: #f1f5f9; color: var(--text); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-block { width: 100%; }
+.slider-group { display: flex; align-items: center; gap: 10px; }
+.slider-group input[type="range"] { flex: 1; accent-color: var(--accent); }
+.slider-value { min-width: 24px; text-align: center; font-weight: 700; font-size: 18px; color: var(--accent); }
+.ability-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 500px) { .ability-grid { grid-template-columns: 1fr; } }
+.ability-field label { font-size: 13px; font-weight: 500; display: block; margin-bottom: 2px; }
+.ability-field .slider-labels { display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; margin-top: -2px; }
+
+.student-tree { margin-top: 8px; }
+.student-node { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+.student-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #f8fafc; cursor: pointer; user-select: none; }
+.student-header:hover { background: #f1f5f9; }
+.student-header .name { font-weight: 600; font-size: 14px; }
+.student-header .count { font-size: 12px; color: var(--text2); margin-left: 8px; }
+.subject-list { padding: 6px 12px 8px 12px; }
+.subject-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 6px; margin-bottom: 2px; }
+.subject-item:hover { background: #f1f5f9; }
+.subject-item .sname { font-size: 13px; font-weight: 500; }
+.subject-item .pred-score { display: inline-block; font-size: 13px; font-weight: 700; padding: 1px 8px; border-radius: 4px; color: #fff; margin-left: 4px; }
+.ps-5 { background: #22c55e; } .ps-4 { background: #3b82f6; } .ps-3 { background: #f59e0b; } .ps-2 { background: #f97316; } .ps-1 { background: #ef4444; }
+.subject-item .scores { font-size: 11px; color: var(--text2); display: flex; gap: 2px 6px; flex-wrap: wrap; margin-top: 2px; }
+.score-digit { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center; border-radius: 3px; font-weight: 600; font-size: 11px; color: #fff; }
+.sd-5 { background: #22c55e; } .sd-4 { background: #3b82f6; } .sd-3 { background: #f59e0b; } .sd-2 { background: #f97316; } .sd-1 { background: #ef4444; }
+.subject-actions { display: flex; gap: 4px; }
+.btn-icon { background: none; border: none; cursor: pointer; padding: 3px 5px; border-radius: 4px; font-size: 13px; color: var(--text2); }
+.btn-icon:hover { background: #e2e8f0; color: var(--text); }
+.btn-icon.danger:hover { color: var(--red); background: #fef2f2; }
+
+.tabs { display: flex; gap: 4px; margin-bottom: 12px; background: #f1f5f9; border-radius: 8px; padding: 3px; flex-wrap: wrap; }
+.tab-btn { flex: 1; min-width: 60px; padding: 6px 10px; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; color: var(--text2); transition: all .15s; }
+.tab-btn.active { background: #fff; color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.tab-btn:hover:not(.active) { color: var(--text); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.chart-container { position: relative; height: 270px; }
+.chart-container-sm { position: relative; height: 200px; }
+
+.table-wrap { overflow-x: auto; }
+table.data { width: 100%; font-size: 13px; border-collapse: collapse; }
+table.data th { text-align: center; font-size: 12px; font-weight: 600; color: var(--text2); padding: 6px 6px; border-bottom: 2px solid var(--border); background: #f8fafc; }
+table.data td { padding: 5px 6px; text-align: center; border-bottom: 1px solid #f1f5f9; }
+table.data td:first-child, table.data th:first-child { text-align: left; }
+.cell-best { background: #dcfce7; font-weight: 600; }
+.cell-worst { background: #fef2f2; }
+
+.model-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.model-k-select { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2); }
+.model-k-select select { border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-size:13px; outline:none; }
+.cluster-card { border-radius: 8px; padding: 14px; margin-bottom: 12px; border: 1px solid var(--border); }
+.cluster-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.cluster-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; flex-shrink:0; }
+.cluster-members { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+.cluster-range table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.cluster-range td, .cluster-range th { padding: 3px 6px; font-size: 12px; text-align: center; border-bottom: 1px solid #f1f5f9; }
+.cluster-range th { font-weight: 600; color: var(--text2); }
+.model-explanation { background: #f8fafc; border-radius: 8px; padding: 14px; border: 1px solid var(--border); margin-top: 12px; font-size: 13px; line-height: 1.7; }
+.model-explanation code { background: #e2e8f0; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+.model-explanation .math { font-style: italic; color: var(--accent); }
+
+.insight-card { background: #f8fafc; border-radius: 8px; padding: 12px; border: 1px solid var(--border); margin-bottom: 8px; }
+.insight-card:last-child { margin-bottom: 0; }
+.insight-card h4 { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.insight-card p { font-size: 13px; color: var(--text2); line-height: 1.5; }
+.strength { border-left: 3px solid var(--green); } .weakness { border-left: 3px solid var(--red); } .insight { border-left: 3px solid var(--accent); }
+
+.empty-state { text-align: center; padding: 40px 16px; color: #94a3b8; font-size: 14px; }
+.empty-state p { margin-top: 4px; }
+.rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 700; }
+.rank-1 { background: #fef3c7; color: #b45309; } .rank-2 { background: #e5e7eb; color: #4b5563; } .rank-3 { background: #fed7aa; color: #c2410c; } .rank-other { background: #f1f5f9; color: #64748b; }
+.comp-select { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.comp-select label { font-size: 13px; color: var(--text2); }
+.comp-select select { border:1px solid var(--border); border-radius:6px; padding:4px 8px; font-size:13px; outline:none; }
+.modal-overlay { position: fixed; inset:0; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-box { background: #fff; border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.15); }
+.modal-box h3 { font-size: 17px; margin-bottom: 8px; }
+.modal-box p { font-size: 14px; color: var(--text2); margin-bottom: 18px; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 800px) { .overview-grid { grid-template-columns: 1fr; } }
+.formula-card { background: #f8fafc; border-radius: 8px; padding: 14px; border: 1px solid var(--border); margin-bottom: 10px; font-size: 13px; line-height: 1.7; }
+.formula-card .fn { font-weight: 600; color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>AP Physics C 能力评估 <span class="tag">五分制·预测模型</span></h1>
+    <div style="margin-top:10px;font-size:13px;">
+      <select id="courseFilter" onchange="filterBySubject()" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none;">
+        <option value="">全部科目</option>
+        <option value="AP Physics C: Mechanics">AP Physics C: Mechanics</option>
+        <option value="AP Physics C: Electricity & Magnetism">AP Physics C: E&amp;M</option>
+        <option value="AP Calculus BC">AP Calculus BC</option>
+      </select>
+    </div>
+    <p>专为 AP Physics C: Mechanics / E&amp;M 设计 · 输入六项能力自动预测AP得分 <a href="search.html" style="font-size:12px;color:var(--accent);text-decoration:none;margin-left:12px;">🔍 查询页面 →</a></p>
+  </header>
+  <div class="layout">
+    <!-- LEFT -->
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <h2>学生管理</h2>
+        <div class="form-row"><label>选择或新建学生</label>
+          <div class="form-inline"><select id="studentSelect" onchange="onStudentSelect()"><option value="__new__">+ 新建学生</option></select></div>
+        </div>
+        <div class="form-row" id="newStudentRow" style="display:none;">
+          <div class="form-inline"><input type="text" id="newStudentInput" placeholder="输入学生姓名" maxlength="20"><button class="btn btn-sm" onclick="createStudent()">确认</button></div>
+        </div>
+        <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">
+        <div id="subjectSection">
+          <div class="form-row"><label>科目</label>
+            <div class="form-inline">
+              <select id="subjectSelect" onchange="onSubjectChange()" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:14px;outline:none;">
+                <option value="">选择科目</option>
+                <option value="AP Physics C: Mechanics">AP Physics C: Mechanics</option>
+                <option value="AP Physics C: Electricity & Magnetism">AP Physics C: Electricity & Magnetism</option>
+                <option value="__custom__">输入其他科目...</option>
+              </select>
+              <input type="text" id="subjectCustomInput" placeholder="输入科目名称" style="display:none;flex:1;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:14px;outline:none;">
+              <button class="btn btn-sm" id="subjectAddBtn" onclick="saveSubject()">添加</button>
+            </div>
+          </div>
+          <h3 style="margin:12px 0 8px;font-size:13px;">六项能力评分 <span style="font-weight:400;color:var(--text2);font-size:12px;">（1–5分，3分合格）</span></h3>
+          <div class="ability-grid">
+            <div class="ability-field"><label>学习态度</label><div class="slider-group"><input type="range" min="1" max="5" step="1" value="3" id="ab-0" oninput="sv(0)"><span class="slider-value" id="sv-0">3</span></div><div class="slider-labels"><span>1差</span><span>3合格</span><span>5优</span></div></div>
+            <div class="ability-field"><label>学习自驱力</label><div class="slider-group"><input type="range" min="1" max="5" step="1" value="3" id="ab-1" oninput="sv(1)"><span class="slider-value" id="sv-1">3</span></div><div class="slider-labels"><span>1差</span><span>3合格</span><span>5优</span></div></div>
+            <div class="ability-field"><label>基础能力</label><div class="slider-group"><input type="range" min="1" max="5" step="1" value="3" id="ab-2" oninput="sv(2)"><span class="slider-value" id="sv-2">3</span></div><div class="slider-labels"><span>1差</span><span>3合格</span><span>5优</span></div></div>
+            <div class="ability-field"><label>英语能力</label><div class="slider-group"><input type="range" min="1" max="5" step="1" value="3" id="ab-3" oninput="sv(3)"><span class="slider-value" id="sv-3">3</span></div><div class="slider-labels"><span>1差</span><span>3合格</span><span>5优</span></div></div>
+            <div class="ability-field"><label>考试能力</label><div class="slider-group"><input type="range" min="1" max="5" step="1" value="3" id="ab-4" oninput="sv(4)"><span class="slider-value" id="sv-4">3</span></div><div class="slider-labels"><span>1差</span><span>3合格</span><span>5优</span></div></div>
+            <div class="ability-field"><label>抗压能力</label><div class="slider-group"><input type="range" min="1" max="5" step="1" value="3" id="ab-5" oninput="sv(5)"><span class="slider-value" id="sv-5">3</span></div><div class="slider-labels"><span>1差</span><span>3合格</span><span>5优</span></div></div>
+          </div>
+          <div class="form-row" style="margin-top:8px;">
+            <label>实际AP分（可选，用于验证公式）</label>
+            <input type="number" id="actualScore" min="1" max="5" step="1" placeholder="留空则未知" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:14px;outline:none;">
+          </div>
+          <div style="margin-top:10px;display:flex;gap:6px;">
+            <button class="btn btn-sm btn-block" onclick="saveSubject()">保存评分</button>
+            <button class="btn btn-sm btn-block btn-outline" onclick="resetSliders()">重置</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>已录入数据 <span id="dataStats" style="font-size:12px;font-weight:400;color:var(--text2);"></span></h2>
+        <div id="studentTree" class="student-tree"></div>
+        <div style="margin-top:10px;display:flex;gap:6px;">
+          <button class="btn btn-sm btn-block btn-outline" onclick="saveToFile()">💾 保存到文件</button>
+          <button class="btn btn-sm btn-block btn-outline" onclick="document.getElementById('importFile').click()">📂 加载文件</button>
+          <button class="btn btn-sm btn-block btn-outline" onclick="loadExampleData()" style="margin-top:6px;">🔄 重置初始数据</button>
+          <input type="file" id="importFile" accept=".json" style="display:none" onchange="loadFromFile(event)">
+        </div>
+      </div>
+    </div>
+    <!-- RIGHT -->
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <h2>分析总览</h2>
+        <div id="analysisOverview" class="empty-state"><div style="font-size:36px;">📊</div><p>添加数据后自动分析</p></div>
+      </div>
+      <div class="card">
+        <h2>详细分析</h2>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('formula',this)">📊 预测公式</button>
+          <button class="tab-btn" onclick="switchTab('ranking',this)">排名</button>
+          <button class="tab-btn" onclick="switchTab('radar',this)">雷达图</button>
+          <button class="tab-btn" onclick="switchTab('cluster',this)">📐 聚类模型</button>
+          <button class="tab-btn" onclick="switchTab('standard',this)">📏 评价标准</button>
+          <button class="tab-btn" onclick="switchTab('insights',this)">洞察</button>
+        </div>
+        <div id="tab-formula" class="tab-content active"></div>
+        <div id="tab-ranking" class="tab-content"></div>
+        <div id="tab-radar" class="tab-content"></div>
+        <div id="tab-cluster" class="tab-content"></div>
+        <div id="tab-standard" class="tab-content"></div>
+        <div id="tab-insights" class="tab-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// ═══════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════
+const ABILITIES = ['学习态度','学习自驱力','基础能力','英语能力','考试能力','抗压能力'];
+const CLUSTER_COLORS = [
+  { bg:'#3b82f6', light:'#eff6ff' }, { bg:'#ef4444', light:'#fef2f2' },
+  { bg:'#22c55e', light:'#f0fdf4' }, { bg:'#f59e0b', light:'#fffbeb' },
+  { bg:'#8b5cf6', light:'#f5f3ff' }, { bg:'#ec4899', light:'#fdf2f8' },
+  { bg:'#14b8a6', light:'#f0fdfa' }, { bg:'#f97316', light:'#fff7ed' },
+];
+// ═══════════════════════════════════════════
+//  各科目 AP 预测公式
+// ═══════════════════════════════════════════
+const COURSE_FORMULAS = {
+  "AP Physics C: Mechanics": {
+    penaltyRates: [0.10, 0.20, 0.40, 0.40, 0.20, 0.10],
+    hasSpecial: true
+  },
+  "AP Physics C: Electricity & Magnetism": {
+    penaltyRates: [0.10, 0.20, 0.40, 0.40, 0.20, 0.10],
+    hasSpecial: true
+  },
+  "AP Calculus BC": {
+    penaltyRates: [0.00, 0.00, 0.00, 0.10, 0.10, 0.20],
+    hasSpecial: false
+  }
+};
+// data format helpers
+function getScores(d){return Array.isArray(d)?d:(d&&d.s?d.s:[]);}
+function getActual(d){return (d&&!Array.isArray(d)&&d.a!=null)?Math.round(d.a/20):null;}
+
+
+function predictAP(scores5, courseName) {
+  const fmt = COURSE_FORMULAS[courseName] || COURSE_FORMULAS["AP Physics C: Mechanics"];
+  const PR = fmt.penaltyRates;
+  const TH = 3;
+  let base = 0;
+  for (let i = 0; i < 6; i++) base += scores5[i] / 6;
+  let penalty = 0;
+  for (let i = 0; i < 6; i++) {
+    penalty += Math.max(0, TH - scores5[i]) * PR[i];
+  }
+  if (fmt.hasSpecial && scores5[2] >= 4 && scores5[0] <= 3) penalty += 0.4;
+  const final = base - penalty;
+  const result = Math.max(1, Math.min(5, Math.round(final)));
+  return { base, penalty, final, result };
+}
+
+
+
+// helpers
+function to5(v) { return (v / 20).toFixed(1); }
+function to5r(v) { return Math.round(v / 20); }
+function from5(v) { return v * 20; }
+function scoreClass5(v) { const s=v/20; return s>=5?'sd-5':s>=4?'sd-4':s>=3?'sd-3':s>=2?'sd-2':'sd-1'; }
+function predClass5(v) { return 'ps-'+v; }
+
+// ═══════════════════════════════════════════
+//  DATA MODEL
+// ═══════════════════════════════════════════
+let students = {};
+let currentStudent = null;
+let editingSubject = null;
+let barChart = null, radarChart = null, clusterRadarChart = null, standardRadarChart = null;
+
+function init() {
+  const saved = localStorage.getItem('sra_v4_ap');
+  if (saved) { try { students = JSON.parse(saved); } catch(e) { students = {}; } }
+  // 首次打开自动载入7名学生的数据
+  if (Object.keys(students).length === 0) {
+    students = JSON.parse(JSON.stringify(EXAMPLE_DATA));
+    localStorage.setItem('sra_v4_ap', JSON.stringify(students));
+  }
+  renderStudentSelect();
+  renderStudentTree();
+  onStudentSelect();
+  renderAll();
+}
+
+function saveData() {
+  localStorage.setItem('sra_v4_ap', JSON.stringify(students));
+  renderStudentTree();
+  renderAll();
+}
+
+function getDataPoints() {
+  const pts = [];
+  for (const [sn, subs] of Object.entries(students)) {
+    for (const [sj, scores] of Object.entries(subs)) {
+      pts.push({ name: sn, subject: sj, label: sn+'·'+sj, vector: [...getScores(scores)], actual: getActual(scores) });
+    }
+  }
+  return pts;
+}
+
+function filterBySubject() {
+  currentFilter = document.getElementById('courseFilter').value;
+  renderStudentTree();
+}
+function renderStudentSelect() {
+  const sel = document.getElementById('studentSelect');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="__new__">+ 新建学生</option>';
+  for (const n of Object.keys(students).sort()) {
+    const o = document.createElement('option');
+    o.value = n; o.textContent = n; sel.appendChild(o);
+  }
+  if (Object.keys(students).includes(cur)) sel.value = cur;
+  else { sel.value = '__new__'; document.getElementById('newStudentRow').style.display = 'block'; }
+}
+
+function onStudentSelect() {
+  const sel = document.getElementById('studentSelect');
+  const v = sel.value;
+  const nr = document.getElementById('newStudentRow');
+  if (v === '__new__') {
+    nr.style.display = 'block';
+    document.getElementById('newStudentInput').focus();
+    currentStudent = null;
+    document.getElementById('subjectSection').style.display = 'none';
+  } else {
+    nr.style.display = 'none';
+    currentStudent = v;
+    editingSubject = null;
+    document.getElementById('subjectSection').style.display = 'block';
+    document.getElementById('subjectInput').value = '';
+    resetSliders();
+    updateSubjectDatalist();
+    document.getElementById('subjectAddBtn').textContent = '添加';
+  }
+}
+
+function createStudent() {
+  const inp = document.getElementById('newStudentInput');
+  const n = inp.value.trim();
+  if (!n) return;
+  if (students[n]) { alert('学生"' + n + '"已存在'); return; }
+  const cls = document.getElementById('classInput').value.trim();
+  students[n] = { cls: cls || null };
+  saveData();
+  inp.value = '';
+  document.getElementById('classInput').value = '';
+  renderStudentSelect();
+  document.getElementById('studentSelect').value = n;
+  onStudentSelect();
+}
+
+function deleteStudent(n) {
+  if (!students[n]) return;
+  delete students[n];
+  saveData();
+  renderStudentSelect();
+  document.getElementById('studentSelect').value = '__new__';
+  onStudentSelect();
+}
+
+function updateSubjectDatalist() {
+  const dl = document.getElementById('subjectDatalist');
+  const seen = new Set(); dl.innerHTML = '';
+  for (const subs of Object.values(students)) {
+    for (const sub of Object.keys(subs)) {
+      if (!seen.has(sub)) { seen.add(sub); const o = document.createElement('option'); o.value = sub; dl.appendChild(o); }
+    }
+  }
+}
+
+function resetSliders() {
+  for (let i = 0; i < 6; i++) {
+    const sl = document.getElementById('ab-'+i);
+    if (sl) { sl.value = 3; document.getElementById('sv-'+i).textContent = '3'; }
+  }
+}
+function sv(i) { document.getElementById('sv-'+i).textContent = document.getElementById('ab-'+i).value; }
+
+
+// 科目下拉菜单切换
+function onSubjectChange() {
+  const sel = document.getElementById('subjectSelect');
+  const customInput = document.getElementById('subjectCustomInput');
+  if (sel.value === '__custom__') {
+    customInput.style.display = 'block';
+    customInput.focus();
+  } else {
+    customInput.style.display = 'none';
+  }
+}
+function saveSubject() {
+  if (!currentStudent) { alert('请先选择学生'); return; }
+  const inp = document.getElementById('subjectInput');
+  // 从下拉菜单或自定义输入框获取科目名
+  let subj;
+  const sel = document.getElementById('subjectSelect');
+  const customInput = document.getElementById('subjectCustomInput');
+  if (sel.value === '__custom__') {
+    subj = customInput.value.trim();
+    if (!subj) { customInput.focus(); return; }
+  } else {
+    subj = sel.value;
+    if (!subj) { sel.focus(); return; }
+  }
+  const scores = [];
+  for (let i = 0; i < 6; i++) scores.push(from5(parseInt(document.getElementById('ab-'+i).value, 10)));
+  if (editingSubject) {
+    students[currentStudent][subj] = {s: scores, a: actualVal ? actualVal*20 : null};
+    editingSubject = null;
+    document.getElementById('subjectAddBtn').textContent = '添加';
+  } else {
+    if (students[currentStudent][subj]) {
+      if (!confirm('科目"'+subj+'"已有评分，是否覆盖？')) return;
+    }
+    students[currentStudent][subj] = {s: scores, a: actualVal ? actualVal*20 : null};
+  }
+  saveData();
+  inp.value = '';
+  resetSliders();
+  renderStudentSelect();
+  updateSubjectDatalist();
+  document.getElementById('subjectAddBtn').textContent = '添加';
+}
+
+function editSubject(sn, sj) {
+  document.getElementById('studentSelect').value = sn;
+  onStudentSelect();
+  // 设置下拉或自定义
+  const sel = document.getElementById('subjectSelect');
+  const customInput = document.getElementById('subjectCustomInput');
+  const options = Array.from(sel.options).map(o => o.value);
+  if (options.includes(sj)) {
+    sel.value = sj;
+    customInput.style.display = 'none';
+  } else {
+    sel.value = '__custom__';
+    customInput.style.display = 'block';
+    customInput.value = sj;
+  }
+  const s = getScores(students[sn][sj]);
+  for (let i = 0; i < 6; i++) {
+    const v = to5r(s[i]);
+    document.getElementById('ab-'+i).value = v;
+    document.getElementById('sv-'+i).textContent = v;
+  }
+  const actualVal = getActual(students[sn][sj]);
+  document.getElementById('actualScore').value = actualVal != null ? actualVal : '';
+  editingSubject = sj;
+  document.getElementById('subjectAddBtn').textContent = '更新';
+}
+
+function confirmDeleteSubject(sn, sj) {
+  if (!confirm('确定删除"'+sn+'·'+sj+'"？')) return;
+  delete students[sn][sj];
+  saveData();
+  renderStudentSelect();
+}
+
+function renderStudentTree() {
+  const c = document.getElementById('studentTree');
+  const total = Object.values(students).reduce((s, subs) => s + Object.keys(subs).filter(k => k !== 'cls').length, 0);
+  document.getElementById('dataStats').textContent = Object.keys(students).length+'人/' + total + '科';
+  if (Object.keys(students).length === 0) { c.innerHTML = '<div class="empty-state" style="padding:20px;">暂无数据</div>'; return; }
+  let h = '';
+  for (const [sn, subs] of Object.entries(students).sort()) {
+    const studentCls = subs.cls || null;
+    const studentSubs = Object.fromEntries(Object.entries(subs).filter(([k]) => k !== 'cls'));
+    h += `<div class="student-node"><div class="student-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'"><div><span class="name">${esc(sn)}</span>${studentCls ? '<span style="font-size:11px;color:var(--text2);margin-left:6px;">[' + esc(studentCls) + ']</span>' : ''}</div>
+      <button class="btn-icon danger" onclick="event.stopPropagation();deleteStudent('${esc(sn)}')">✕</button>
+    </div><div class="subject-list">`;
+    for (const [sj, sc] of Object.entries(studentSubs)) {
+    if (currentFilter && sj !== currentFilter) continue;
+      const s5 = getScores(sc).map(v => to5r(v));
+      const pred = predictAP(s5, sj);
+      const act = getActual(sc);
+      h += `<div class="subject-item"><div>
+        <div class="sname">${esc(sj)} <span class="pred-score ${predClass5(pred.result)}">${pred.result}</span></div>
+        <div class="scores">`;
+      for (let i=0;i<6;i++) h += `<span class="score-digit ${scoreClass5(sc[i])}">${to5r(sc[i])}</span>`;
+      h += `</div></div>
+        <div class="subject-actions">
+          <button class="btn-icon" onclick="editSubject('${esc(sn)}','${esc(sj)}')">✎</button>
+          <button class="btn-icon danger" onclick="confirmDeleteSubject('${esc(sn)}','${esc(sj)}')">✕</button>
+        </div>
+      </div>`;
+    }
+    h += `</div></div>`;
+  }
+  c.innerHTML = h;
+}
+
+// ═══════════════════════════════════════════
+//  K-MEANS
+// ═══════════════════════════════════════════
+function kmeans(data, k, maxIter=100, restarts=15) {
+  const n = data.length; if (n < k) return null;
+  const d = data[0].vector.length;
+  let best = { assignments: null, centroids: null, wcss: 1e100 };
+  for (let run = 0; run < restarts; run++) {
+    let centroids = []; const used = new Set();
+    for (let i = 0; i < k; i++) { let idx; do { idx = Math.floor(Math.random() * n); } while (used.has(idx)); used.add(idx); centroids.push([...data[idx].vector]); }
+    let asgn = new Array(n).fill(-1);
+    for (let iter = 0; iter < maxIter; iter++) {
+      let changed = false;
+      for (let i = 0; i < n; i++) {
+        let md = 1e100, bc = 0;
+        for (let j = 0; j < k; j++) { const dd = dist(data[i].vector, centroids[j]); if (dd < md) { md = dd; bc = j; } }
+        if (asgn[i] !== bc) changed = true; asgn[i] = bc;
+      }
+      if (!changed) break;
+      for (let j = 0; j < k; j++) {
+        const mem = []; for (let i = 0; i < n; i++) { if (asgn[i] === j) mem.push(data[i].vector); }
+        if (mem.length > 0) centroids[j] = mem[0].map((_, idx) => { let s=0; for (const m of mem) s+=m[idx]; return s/mem.length; });
+      }
+    }
+    let wcss = 0;
+    for (let i = 0; i < n; i++) wcss += distSq(data[i].vector, centroids[asgn[i]]);
+    if (wcss < best.wcss) best = { assignments: [...asgn], centroids: centroids.map(c=>[...c]), wcss };
+  }
+  return best;
+}
+function dist(a,b) { let s=0; for(let i=0;i<a.length;i++) s+=(a[i]-b[i])**2; return Math.sqrt(s); }
+function distSq(a,b) { let s=0; for(let i=0;i<a.length;i++) s+=(a[i]-b[i])**2; return s; }
+function genClusterName(centroid) {
+  const idx = centroid.map((v,i)=>({i,v})).sort((a,b)=>b.v-a.v);
+  const avg = centroid.reduce((s,v)=>s+v,0)/centroid.length;
+  const type = avg>=75?'全能':avg>=55?'均衡':'待发展';
+  const gap = idx[0].v-idx[idx.length-1].v;
+  const spec = gap>30?'偏科型':gap>15?'倾向型':'综合型';
+  return `${type}·${spec}（${ABILITIES[idx[0].i]}突出）`;
+}
+function runClustering() {
+  const k = parseInt(document.getElementById('clusterK')?.value || 3, 10);
+  const pts = getDataPoints();
+  if (pts.length < k || pts.length < 2) return null;
+  const r = kmeans(pts, k); if (!r) return null;
+  const clusters = [];
+  for (let j = 0; j < k; j++) {
+    const members = [], vectors = [];
+    for (let i = 0; i < pts.length; i++) { if (r.assignments[i] === j) { members.push(pts[i]); vectors.push(pts[i].vector); } }
+    const centroid = r.centroids[j];
+    const ranges = ABILITIES.map((a, ai) => {
+      const vals = vectors.map(v => v[ai]);
+      return { ability: a, min: Math.min(...vals), max: Math.max(...vals), avg: centroid[ai] };
+    });
+    clusters.push({ idx: j, name: genClusterName(centroid), members, centroid, ranges, size: members.length });
+  }
+  return { clusters, wcss: r.wcss, points: pts };
+}
+
+// ═══════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name==='formula') renderFormula();
+  if (name==='ranking') renderRanking();
+  if (name==='radar') renderRadar();
+  if (name==='cluster') renderCluster();
+  if (name==='standard') renderStandard();
+  if (name==='insights') renderInsights();
+}
+
+// ═══════════════════════════════════════════
+//  ★ TAB: 预测公式 (PREDICTION FORMULA)
+// ═══════════════════════════════════════════
+function renderFormula() {
+  const container = document.getElementById('tab-formula');
+  const points = getDataPoints();
+  if (points.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div style="font-size:36px;">📊</div><p>添加数据后显示预测结果</p></div>';
+    return;
+  }
+
+  const PENALTY_RATES = [0.10, 0.20, 0.40, 0.40, 0.20, 0.10];
+  const penaltyNames = ['态度×0.10', '自驱×0.20', '基础×0.40', '英语×0.40', '考试×0.20', '抗压×0.10'];
+
+  let h = `<div class="formula-card" style="margin-bottom:12px;">
+    <h4 style="font-size:14px;margin-bottom:6px;">📐 各科目预测公式</h4>
+    
+    <p><code>base = (六项能力之和) ÷ 6</code></p>
+    <p style="font-weight:600;margin-top:6px;">Step 2 — 及格线检查（3分合格）</p>
+    <p><code>penalty = Σ max(0, 3 − xᵢ) × penaltyᵢ</code></p>
+    <table style="width:100%;font-size:13px;border-collapse:collapse;margin:6px 0;">
+      <tr><td>基础能力</td><td>×0.40</td><td>（最重要，基础不牢地动山摇）</td></tr>
+      <tr><td>英语能力</td><td>×0.40</td><td>（非常重要，AP全英文考试）</td></tr>
+      <tr><td>学习自驱力</td><td>×0.20</td><td>（重要，影响自主学习）</td></tr>
+      <tr><td>考试能力</td><td>×0.20</td><td>（影响临场发挥）</td></tr>
+      <tr><td>学习态度</td><td>×0.10</td><td>（有影响但权重较低）</td></tr>
+      <tr><td>抗压能力</td><td>×0.10</td><td>（有影响但权重较低）</td></tr>
+    </table>
+    <p style="font-weight:600;margin-top:6px;">Step 3 — 特殊修正</p>
+    <p><code>if (基础能力 ≥ 4 且 学习态度 ≤ 3) penalty += 0.4</code></p>
+    <p style="font-size:12px;color:var(--text2);">→ 有能力但不努力，实际表现会低于预期</p>
+    <p style="font-weight:600;margin-top:6px;">Step 4 — 最终得分</p>
+    <p><code>AP得分 = max(1, min(5, round(base − penalty)))</code></p>
+  </div>`;
+
+  // 统计各项能力不及格情况
+  let shortfallStats = [0,0,0,0,0,0];
+  let totalCount = 0;
+
+  let detailRows = '';
+  points.forEach(p => {
+    const s5 = p.vector.map(v => to5r(v));
+    const pred = predictAP(s5, sj);
+    totalCount++;
+    
+    // 计算各项能力的扣分明细
+    let penParts = [];
+    for (let i = 0; i < 6; i++) {
+      if (s5[i] < 3) {
+        const d = 3 - s5[i];
+        const c = d * PENALTY_RATES[i];
+        penParts.push(esc(ABILITIES[i]) + '(' + s5[i] + '分\u21d2-' + c.toFixed(2) + ')');
+        shortfallStats[i]++;
+      }
+    }
+    // 特殊修正
+    let specialNote = '';
+    if (s5[2] >= 4 && s5[0] <= 3) {
+      penParts.push('特殊-0.40');
+      specialNote = '基础高+态度低';
+    }
+    
+    detailRows += '<tr>' +
+      '<td style="text-align:left;">' + esc(p.label) + '</td>' +
+      '<td>' + s5.join('/') + '</td>' +
+      '<td>' + pred.base.toFixed(2) + '</td>' +
+      '<td style="text-align:left;font-size:11px;">' + (penParts.length ? penParts.join(' + ') : '\u2014') + '</td>' +
+      '<td>' + pred.penalty.toFixed(2) + '</td>' +
+      '<td>' + pred.final.toFixed(2) + '</td>' +
+      '<td><span class="pred-score ' + predClass5(pred.result) + '" style="font-size:14px;">' + pred.result + '</span></td>' +
+      '</tr>';
+  });
+
+  h += '<div class="formula-card"><h4 style="font-size:14px;margin-bottom:6px;">📋 各项预测明细</h4>' +
+    '<div class="table-wrap"><table class="data">' +
+    '<thead><tr><th>数据点</th><th>六项</th><th>base</th><th>扣分明细</th><th>penalty</th><th>final</th><th>预测</th><th>实际</th></tr></thead>' +
+    '<tbody>' + detailRows + '</tbody></table></div>' +
+    '</div>';
+
+  // 不及格统计
+  h += '<div class="formula-card insight">' +
+    '<h4 style="font-size:14px;margin-bottom:4px;">📊 群体不及格统计</h4><p>' +
+    '共 ' + totalCount + ' 条数据，各项能力低于3分(及格线)的频次：<br>';
+  for (let i = 0; i < 6; i++) {
+    const pct = (shortfallStats[i] / totalCount * 100).toFixed(0);
+    h += esc(ABILITIES[i]) + '：' + shortfallStats[i] + '次 (' + pct + '%)<br>';
+  }
+  h += '</p><p style="margin-top:6px;font-size:12px;color:var(--text2);">' +
+    '💡 核心逻辑：AP Physics C 考试表现是"木桶型"——最短的板决定装多少水。<br>' +
+    '算法优先捕获学习自驱力和英语能力的短板效应，因为这两项是AP考试的关键命脉。</p></div>';
+
+  container.innerHTML = h;
+}
+
+
+
+// ═══════════════════════════════════════════
+//  OVERVIEW
+// ═══════════════════════════════════════════
+function renderOverview() {
+  const container = document.getElementById('analysisOverview');
+  const points = getDataPoints();
+  if (points.length === 0) {
+    container.innerHTML = '<div class="empty-state" style="padding:20px;"><div style="font-size:36px;">📊</div><p>添加数据后分析</p></div>';
+    return;
+  }
+  const abilityAvgs = ABILITIES.map((a,i) => {
+    const vals = points.map(p => p.vector[i]);
+    return { name: a, avg: vals.reduce((s,v)=>s+v,0)/vals.length };
+  });
+  abilityAvgs.sort((a,b)=>b.avg-a.avg);
+  const best=abilityAvgs[0], worst=abilityAvgs[abilityAvgs.length-1];
+  const clusterResult = runClustering();
+  let cn = '';
+  if (clusterResult) cn = `<span style="font-size:12px;background:#e0e7ff;padding:2px 8px;border-radius:4px;margin-left:6px;">${clusterResult.clusters.length}类 ${points.length}个数据点</span>`;
+
+  let h = `<div class="overview-grid">
+    <div class="insight-card insight"><h4>总览 ${cn}</h4><p>共${Object.keys(students).length}名学生，${points.length}条评分</p></div>
+    <div class="insight-card strength"><h4>群体最强</h4><p>${esc(best.name)}（平均${to5(best.avg)}）</p></div>
+    <div class="insight-card weakness"><h4>群体待加强</h4><p>${esc(worst.name)}（平均${to5(worst.avg)}）</p></div>`;
+  const studentAvgs = {};
+  for (const [sn, subs] of Object.entries(students)) {
+    let t=0,c=0; for (const sc of Object.values(subs)) { t+=sc.reduce((s,v)=>s+v,0)/6; c++; }
+    studentAvgs[sn] = c>0?t/c:0;
+  }
+  const ss = Object.entries(studentAvgs).sort((a,b)=>b[1]-a[1]);
+  if (ss.length>0) h += `<div class="insight-card insight"><h4>综合最佳</h4><p>${esc(ss[0][0])}（${to5(ss[0][1])}）</p></div>`;
+  h += '</div><div class="chart-container-sm" style="margin-top:4px;"><canvas id="overviewChart"></canvas></div>';
+  container.innerHTML = h;
+
+  const ctx = document.getElementById('overviewChart');
+  if (!ctx) return;
+  if (barChart) barChart.destroy();
+  const sorted = [...points].sort((a,b)=>b.vector.reduce((s,v)=>s+v,0)/6-a.vector.reduce((s,v)=>s+v,0)/6);
+  barChart = new Chart(ctx, {
+    type: 'bar', data: {
+      labels: sorted.map(p=>p.label),
+      datasets: [{ label: '综合均分', data: sorted.map(p=>p.vector.reduce((s,v)=>s+v,0)/6),
+        backgroundColor: sorted.map((_,i)=>i===0?'#f59e0b':i===1?'#64748b':i===2?'#d97706':'#93c5fd'), borderRadius:4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return '综合: '+to5(ctx.raw)+'分'; } } } },
+      scales: { y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9' }, ticks: { stepSize: 20, callback: function(v) { return v/20; } } },
+        x: { grid: { display: false }, ticks: { font: { size: 9 } } } }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+//  RANKING
+// ═══════════════════════════════════════════
+function renderRanking() {
+  const container = document.getElementById('tab-ranking');
+  const points = getDataPoints();
+  if (points.length===0) { container.innerHTML='<div class="empty-state"><p>暂无数据</p></div>'; return; }
+  const sorted = [...points].sort((a,b)=>b.vector.reduce((s,v)=>s+v,0)/6-a.vector.reduce((s,v)=>s+v,0)/6);
+  let h = '<div class="table-wrap"><table class="data"><thead><tr><th>排名</th><th>学生</th><th>科目</th>';
+  ABILITIES.forEach(a=>h+=`<th>${esc(a)}</th>`);
+  h += '<th>综合</th><th>📊预测AP</th></tr></thead><tbody>';
+  sorted.forEach((p,i)=>{
+    const rc=i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other';
+    const avg = p.vector.reduce((s,v)=>s+v,0)/6;
+    const pred = predictAP(p.vector.map(v=>to5r(v)), p.subject);
+    h += `<tr><td><span class="rank-badge ${rc}">${i+1}</span></td>
+      <td style="font-weight:500;">${esc(p.name)}</td><td>${esc(p.subject)}</td>`;
+    p.vector.forEach(v=>h+=`<td><strong>${to5r(v)}</strong></td>`);
+    h += `<td>${to5(avg)}</td><td><span class="pred-score ${predClass5(pred.result)}">${pred.result}</span></td></tr>`;
+  });
+  h += '</tbody></table></div>';
+  container.innerHTML = h;
+}
+
+// ═══════════════════════════════════════════
+//  RADAR
+// ═══════════════════════════════════════════
+function renderRadar() {
+  const container = document.getElementById('tab-radar');
+  const points = getDataPoints();
+  if (points.length===0) { container.innerHTML='<div class="empty-state"><p>暂无数据</p></div>'; return; }
+  const si = parseInt(container.dataset.selectedIdx||0);
+  container.innerHTML = `<div class="comp-select"><label>选择对比：</label>
+    <select id="radarSelect" onchange="document.getElementById('tab-radar').dataset.selectedIdx=this.value;drawRadar()">
+      ${points.map((p,i)=>`<option value="${i}" ${i===si?'selected':''}>${esc(p.label)}</option>`).join('')}
+    </select></div>
+    <div class="chart-container"><canvas id="radarChart"></canvas></div>`;
+  drawRadar();
+}
+function drawRadar() {
+  const ctx = document.getElementById('radarChart');
+  if (!ctx) return;
+  const points = getDataPoints();
+  const si = parseInt(document.getElementById('tab-radar').dataset.selectedIdx||0);
+  const main = points[si]; if (!main) return;
+  const datasets = [{
+    label: main.label, data: main.vector.map(v=>v/20),
+    borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.15)', pointBackgroundColor: '#3b82f6', pointRadius: 4, borderWidth: 2,
+  }];
+  points.forEach((p,i)=>{
+    if (i===si) return;
+    datasets.push({ label: p.label, data: p.vector.map(v=>v/20), borderColor: '#cbd5e1', backgroundColor: 'transparent', pointBackgroundColor: '#94a3b8', pointRadius: 2, borderWidth: 1, borderDash: [3,3] });
+  });
+  if (radarChart) radarChart.destroy();
+  radarChart = new Chart(ctx, {
+    type: 'radar', data: { labels: ABILITIES, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { r: { min: 0, max: 5, ticks: { stepSize: 1, font: { size: 10 } }, pointLabels: { font: { size: 11, weight:'500' } }, grid: { color:'#e2e8f0' }, angleLines: { color:'#e2e8f0' } } },
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12, padding: 6 } } }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+//  CLUSTER
+// ═══════════════════════════════════════════
+function renderCluster() {
+  const container = document.getElementById('tab-cluster');
+  const pts = getDataPoints();
+  const k = parseInt(document.getElementById('clusterK')?.value||3,10);
+  if (pts.length < 2) { container.innerHTML='<div class="empty-state"><div style="font-size:36px;">📐</div><p>至少需要2条数据</p></div>'; return; }
+  const result = runClustering();
+  if (!result||result.clusters.length<2) { container.innerHTML='<div class="empty-state"><p>聚类失败</p></div>'; return; }
+  let h = `<div class="model-header"><div class="model-k-select"><label>分类数(K)：</label><select id="clusterK" onchange="renderCluster()">${[2,3,4,5,6].map(v=>`<option value="${v}" ${v===k?'selected':''}>${v}</option>`).join('')}</select></div><span style="font-size:12px;color:var(--text2);">WCSS=${result.wcss.toFixed(1)}</span></div>`;
+  result.clusters.forEach((c,i)=>{
+    const col = CLUSTER_COLORS[i%CLUSTER_COLORS.length];
+    const oAvg = c.centroid.reduce((s,v)=>s+v,0)/6;
+    h += `<div class="cluster-card" style="background:${col.light};border-color:${col.bg}40;">
+      <h4><span class="cluster-dot" style="background:${col.bg};"></span> 第${i+1}类：${esc(c.name)} <span style="font-size:12px;font-weight:400;color:var(--text2);">(${c.size}条，综合${to5(oAvg)})</span></h4>
+      <div class="cluster-members">${c.members.map(m=>esc(m.label)).join('、')}</div>
+      <div class="cluster-range"><table><thead><tr><th>能力</th><th>最低</th><th>平均</th><th>最高</th><th>区间</th><th>等级</th></tr></thead><tbody>
+        ${c.ranges.map(r => `<tr><td style="text-align:left;font-weight:500;">${esc(r.ability)}</td><td>${to5r(r.min)}</td><td><strong>${to5(r.avg)}</strong></td><td>${to5r(r.max)}</td><td style="font-size:11px;color:var(--text2);">${to5r(r.min)}–${to5r(r.max)}</td><td><span style="color:${levelColor5(r.avg)};font-weight:600;">${level5(r.avg)}</span></td></tr>`).join('')}
+      </tbody></table></div>
+    </div>`;
+  });
+  h += '<div class="chart-container" style="margin-top:4px;"><canvas id="clusterRadarChart"></canvas></div>';
+  h += `<div class="model-explanation">
+    <strong>📐 数学模型说明</strong><br><br><strong>数据点：</strong>每条评分记录 (学生,科目) 是一个6维向量，对应六项能力。<br>
+    存储和计算使用0-100分制，显示为五分制（3分合格，5分优秀）。<br><br>
+    <strong>算法：</strong>K-Means聚类（欧氏距离），多次随机重启。<br>
+    <strong>目标：</strong>最小化WCSS。<br><br>
+    <strong>分类规则：</strong>新数据点归入距离最近的质心所在类。<br>
+    <strong>AP预测公式：</strong>见「预测公式」标签页。
+  </div>`;
+  container.innerHTML = h;
+  const ctx = document.getElementById('clusterRadarChart');
+  if (ctx) {
+    if (clusterRadarChart) clusterRadarChart.destroy();
+    const datasets = result.clusters.map((c,i)=>{
+      const col = CLUSTER_COLORS[i%CLUSTER_COLORS.length];
+      return { label: `第${i+1}类`, data: c.centroid.map(v=>v/20), borderColor: col.bg, backgroundColor: col.bg+'20', pointBackgroundColor: col.bg, pointRadius: 3, borderWidth: 2 };
+    });
+    clusterRadarChart = new Chart(ctx, {
+      type: 'radar', data: { labels: ABILITIES, datasets },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { title: { display: true, text: '各类别能力画像对比（五分制）', font: { size: 13 } }, legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12, padding: 6 } } },
+        scales: { r: { min: 0, max: 5, ticks: { stepSize: 1, font: { size: 9 } }, pointLabels: { font: { size: 11, weight:'500' } }, grid: { color:'#e2e8f0' }, angleLines: { color:'#e2e8f0' } } }
+      }
+    });
+  }
+}
+
+// ═══════════════════════════════════════════
+//  STANDARD
+// ═══════════════════════════════════════════
+function renderStandard() {
+  const container = document.getElementById('tab-standard');
+  const pts = getDataPoints();
+  if (pts.length<3) { container.innerHTML='<div class="empty-state"><div style="font-size:36px;">📏</div><p>至少3条数据</p></div>'; return; }
+  const result = runClustering();
+  if (!result) { container.innerHTML='<div class="empty-state"><p>请先在聚类模型中运行</p></div>'; return; }
+  const sc = [...result.clusters].sort((a,b)=>b.centroid.reduce((s,v)=>s+v,0)/6-a.centroid.reduce((s,v)=>s+v,0)/6);
+  const allScores = pts.map(p=>p.vector.reduce((s,v)=>s+v,0)/6);
+  const gMin=Math.min(...allScores),gMax=Math.max(...allScores),gAvg=allScores.reduce((s,v)=>s+v,0)/allScores.length;
+  let h = `<div class="insight-card insight" style="margin-bottom:12px;"><h4>整体评价尺规</h4><p>综合范围：${to5(gMin)}–${to5(gMax)} | 平均：${to5(gAvg)} | 数据：${pts.length}条</p></div><h3 style="font-size:14px;font-weight:600;margin-bottom:8px;">各类别评价标准（五分制）</h3>`;
+  sc.forEach((c,idx)=>{
+    const col=CLUSTER_COLORS[idx%CLUSTER_COLORS.length];
+    const oAvg=c.centroid.reduce((s,v)=>s+v,0)/6;
+    let desc='';
+    if (oAvg/20>=3.5) desc='表现良好，适合挑战更高难度';
+    else if (oAvg/20>=2.5) desc='表现一般，针对性补强后可提升';
+    else desc='需重点关注，建议从弱项制定提升计划';
+    const ranked=c.ranges.map((r,i)=>({...r,i})).sort((a,b)=>b.avg-a.avg);
+    const strengths=ranked.slice(0,2).map(r=>r.ability+'('+to5(r.avg)+')').join('、');
+    const weakness=ranked[ranked.length-1];
+    h += `<div class="cluster-card" style="background:${col.light};border-color:${col.bg}40;">
+      <h4><span class="cluster-dot" style="background:${col.bg};"></span> ${esc(c.name)}</h4>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:6px;">综合区间：<strong>${to5(Math.min(...c.members.map(m=>m.vector.reduce((s,v)=>s+v,0)/6)))}–${to5(Math.max(...c.members.map(m=>m.vector.reduce((s,v)=>s+v,0)/6)))}</strong> | 典型：<strong>${to5(oAvg)}</strong> | 优势：${esc(strengths)} | 弱项：${esc(weakness.ability)}(${to5(weakness.avg)})</p>
+      <p style="font-size:13px;color:var(--text2);">${desc}</p>
+      <div class="cluster-range"><table><thead><tr><th>能力</th><th>区间</th><th>典型值</th><th>等级</th></tr></thead><tbody>
+        ${c.ranges.map(r=>`<tr><td style="text-align:left;font-weight:500;">${esc(r.ability)}</td><td>${to5r(r.min)}–${to5r(r.max)}</td><td><strong>${to5(r.avg)}</strong></td><td><span style="color:${levelColor5(r.avg)};font-weight:600;">${level5(r.avg)}</span></td></tr>`).join('')}
+      </tbody></table></div>
+      <div style="font-size:12px;color:var(--text2);margin-top:4px;">成员：${esc(c.members.map(m=>m.label).join('、'))}</div>
+    </div>`;
+  });
+  h += `<div class="model-explanation" style="margin-top:12px;"><strong>📏 评价标准说明</strong><br><br>综合分落在哪一类的区间内即判定为对应层次。等级：≥4.5优秀，≥3.5良好，≥3.0合格，≥2.0一般，<2.0待提升。<br><br><strong>AP预测公式</strong>可在「预测公式」标签页查看详细。</div>`;
+  h += '<div style="margin-top:12px;"><div class="chart-container"><canvas id="standardRadarChart"></canvas></div></div>';
+  container.innerHTML = h;
+  const sctx = document.getElementById('standardRadarChart');
+  if (sctx) {
+    if (standardRadarChart) standardRadarChart.destroy();
+    const datasets = sc.map((c,i)=>{ const col=CLUSTER_COLORS[i%CLUSTER_COLORS.length]; return { label: c.name, data: c.centroid.map(v=>v/20), borderColor: col.bg, backgroundColor: col.bg+'20', pointBackgroundColor: col.bg, pointRadius: 3, borderWidth: 2 }; });
+    standardRadarChart = new Chart(sctx, {
+      type: 'radar', data: { labels: ABILITIES, datasets },
+      options: { responsive: true, maintainAspectRatio: false,
+        plugins: { title: { display: true, text: '各类别能力画像对比（五分制）', font: { size: 13 } }, legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12, padding: 6 } } },
+        scales: { r: { min: 0, max: 5, ticks: { stepSize: 1, font: { size: 9 } }, pointLabels: { font: { size: 11, weight:'500' } }, grid: { color:'#e2e8f0' }, angleLines: { color:'#e2e8f0' } } }
+      }
+    });
+  }
+}
+
+// ═══════════════════════════════════════════
+//  INSIGHTS
+// ═══════════════════════════════════════════
+function renderInsights() {
+  const container = document.getElementById('tab-insights');
+  const pts = getDataPoints();
+  if (pts.length===0) { container.innerHTML='<div class="empty-state"><p>暂无数据</p></div>'; return; }
+  let h='';
+  for (const [sn,subs] of Object.entries(students).sort()) {
+    const entries=Object.entries(subs);
+    const t=[0,0,0,0,0,0],cnt=[0,0,0,0,0,0];
+    entries.forEach(([_,sc])=>{sc.forEach((v,i)=>{t[i]+=v;cnt[i]++;});});
+    const avgs=t.map((v,i)=>({name:ABILITIES[i],avg:cnt[i]>0?v/cnt[i]:0}));
+    avgs.sort((a,b)=>b.avg-a.avg);
+    const allScores=entries.map(([sj,sc])=>({subject:sj,avg:sc.reduce((s,v)=>s+v,0)/6}));
+    allScores.sort((a,b)=>b.avg-a.avg);
+    h += `<div class="insight-card insight"><h4>${esc(sn)}（${entries.length}科）</h4>
+      <p><span style="color:var(--green);font-weight:500;">优势：</span>${avgs.slice(0,2).map(a=>a.name+'('+to5(a.avg)+')').join('、')} | <span style="color:var(--red);font-weight:500;">待提升：</span>${avgs.slice(-2).reverse().map(a=>a.name+'('+to5(a.avg)+')').join('、')}</p>
+      <p style="font-size:12px;color:var(--text2);margin-top:3px;">最强科目：${esc(allScores[0].subject)}（${to5(allScores[0].avg)}）${allScores.length>1?' | 弱科：'+esc(allScores[allScores.length-1].subject)+'（'+to5(allScores[allScores.length-1].avg)+'）':''}</p>
+    </div>`;
+  }
+  const result=runClustering();
+  if (result) {
+    h+='<div class="insight-card strength"><h4>群体特征</h4><p>';
+    result.clusters.sort((a,b)=>b.centroid.reduce((s,v)=>s+v,0)/6-a.centroid.reduce((s,v)=>s+v,0)/6).forEach((c,i)=>{
+      h += `第${i+1}类「${esc(c.name)}」${c.size}条：${esc(c.members.map(m=>m.label).join('、'))}<br>`;
+    });
+    h+='</p></div>';
+  }
+  h+='<div style="margin-top:8px;"><div class="chart-container-sm"><canvas id="allRadarChart"></canvas></div></div>';
+  container.innerHTML=h;
+  const ctx=document.getElementById('allRadarChart');
+  if (ctx) {
+    if (window._allRadar) window._allRadar.destroy();
+    const colors=['#3b82f6','#ef4444','#22c55e','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316'];
+    const datasets=pts.map((p,i)=>({label:p.label,data:p.vector.map(v=>v/20),borderColor:colors[i%colors.length],backgroundColor:'transparent',pointRadius:3,borderWidth:1.5}));
+    window._allRadar=new Chart(ctx,{
+      type:'radar',data:{labels:ABILITIES,datasets},
+      options:{responsive:true,maintainAspectRatio:false,
+        scales:{r:{min:0,max:5,ticks:{stepSize:1,font:{size:9}},pointLabels:{font:{size:11}},grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'}}},
+        plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10,padding:4}}}
+      }
+    });
+  }
+}
+
+// ═══════════════════════════════════════════
+//  FILE & UTILS
+// ═══════════════════════════════════════════
+function saveToFile() {
+  const data={version:2,abilities:ABILITIES,exportedAt:new Date().toISOString(),students};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`学生评估数据_${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);
+}
+function loadFromFile(ev) {
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=function(e){try{const d=JSON.parse(e.target.result);if(d.students&&typeof d.students==='object')students=d.students;saveData();renderStudentSelect();document.getElementById('studentSelect').value='__new__';onStudentSelect();alert('加载成功！'+Object.keys(students).length+'名学生');}catch(err){alert('加载失败');}};
+  r.readAsText(f);ev.target.value='';
+}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function level5(v){const s=v/20;return s>=4.5?'优秀':s>=3.5?'良好':s>=3.0?'合格':s>=2.0?'一般':'待提升';}
+function levelColor5(v){const s=v/20;return s>=4.5?'var(--green)':s>=3.5?'var(--accent)':s>=3.0?'var(--amber)':'var(--red)';}
+
+// ═══════════════════════════════════════════
+//  示例数据
+// ═══════════════════════════════════════════
+const EXAMPLE_DATA = {"Wode Wang": {"AP Physics C: Mechanics": {"s": [100, 100, 100, 100, 80, 80], "a": 100}}, "Herbert Cao": {"AP Physics C: Mechanics": {"s": [80, 60, 80, 80, 80, 80], "a": 80}, "AP Calculus BC": {"s": [60, 80, 60, 100, 100, 80], "a": 80}}, "Chan Chan": {"AP Physics C: Mechanics": {"s": [60, 60, 20, 20, 20, 60], "a": 20}, "AP Calculus BC": {"s": [60, 60, 20, 20, 20, 20], "a": 20}}, "Marx Zhao": {"AP Physics C: Mechanics": {"s": [60, 60, 80, 80, 60, 60], "a": 60}, "AP Calculus BC": {"s": [60, 60, 80, 100, 60, 80], "a": 80}}, "Evan Ye": {"AP Physics C: Mechanics": {"s": [60, 20, 40, 20, 60, 100], "a": 20}, "AP Calculus BC": {"s": [80, 100, 60, 20, 60, 100], "a": 60}}, "Jenny Wang": {"AP Physics C: Mechanics": {"s": [20, 20, 40, 80, 60, 20], "a": 20}, "AP Calculus BC": {"s": [40, 40, 60, 80, 60, 40], "a": 40}}, "Lon Li": {"AP Physics C: Mechanics": {"s": [60, 60, 100, 80, 80, 80], "a": 60}}, "Owen Wei": {"AP Calculus BC": {"s": [20, 20, 40, 100, 60, 20], "a": 40}}, "Tom Gao": {"AP Calculus BC": {"s": [20, 20, 20, 40, 20, 20], "a": 20}}, "Antonia Yang": {"AP Calculus BC": {"s": [60, 40, 20, 60, 20, 20], "a": 20}}, "Shubert Ouyang": {"AP Calculus BC": {"s": [20, 20, 60, 60, 20, 20], "a": 20}}, "Morri Zhao": {"AP Calculus BC": {"s": [20, 20, 20, 40, 20, 20], "a": 20}}, "Katiana Tan": {"AP Calculus BC": {"s": [60, 60, 20, 60, 20, 20], "a": 20}}, "Siru Wu": {"AP Calculus BC": {"s": [100, 80, 80, 100, 60, 80], "a": 80}}, "Selina Huang": {"AP Calculus BC": {"s": [100, 80, 60, 60, 40, 60], "a": null}}, "Eathan Liu": {"AP Calculus BC": {"s": [60, 60, 80, 60, 60, 80], "a": 60}}};
+
+function loadExampleData() {
+  if (Object.keys(students).length > 0) {
+    if (!confirm('当前已有数据，是否覆盖？')) return;
+  }
+  students = JSON.parse(JSON.stringify(EXAMPLE_DATA));
+  saveData();
+  renderStudentSelect();
+  document.getElementById('studentSelect').value = '__new__';
+  onStudentSelect();
+  alert('已加载 7 名学生的示例数据！');
+}
+function renderAll(){
+  renderOverview();
+  [['formula',renderFormula],['ranking',renderRanking],['radar',renderRadar],['cluster',renderCluster],['standard',renderStandard],['insights',renderInsights]].forEach(([id,fn])=>{
+    const el=document.getElementById('tab-'+id);
+    if(el&&el.classList.contains('active')) fn();
+  });
+}
+init();
+</script>
+</body>
 </html>
