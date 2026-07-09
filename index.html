@@ -325,11 +325,13 @@ function getDataPoints() {
 }
 
 function filterBySubject() {
+  var el = document.getElementById("courseFilter"); if(!el) return;
   currentFilter = document.getElementById('courseFilter').value;
   renderStudentTree();
 }
 function renderStudentSelect() {
   const sel = document.getElementById('studentSelect');
+  if (!sel) { console.error('studentSelect missing'); return; }
   const cur = sel.value;
   sel.innerHTML = '<option value="__new__">+ 新建学生</option>';
   for (const n of Object.keys(students).sort()) {
@@ -342,6 +344,7 @@ function renderStudentSelect() {
 
 function onStudentSelect() {
   const sel = document.getElementById('studentSelect');
+  if (!sel) return;
   const v = sel.value;
   const nr = document.getElementById('newStudentRow');
   if (v === '__new__') {
