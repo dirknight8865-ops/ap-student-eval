@@ -209,7 +209,39 @@ table.data td:first-child, table.data th:first-child { text-align: left; }
     </div>
   </div>
 </div>
+
+  <div id="studentModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeStudentModal()">
+    <div class="modal-box" style="max-width:500px;padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h3 id="modalStudentName" style="font-size:18px;margin:0;"></h3>
+        <button class="btn-icon" onclick="closeStudentModal()" style="font-size:20px;">X</button>
+      </div>
+      <div id="modalSubjectList" style="margin-bottom:10px;"></div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
+      <div id="modalEditor" style="display:none;">
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px;" id="modalEditSubject"></div>
+        <div class="ability-grid">
+          <div class="ability-field"><label>学习态度</label><div class="slider-group"><input type="range" min="1" max="5" step="1" value="3" id="mab-0" oninput="msv(0)"><span class="slider-value" id="msv-0">3</span></div></div>
+          <div class="ability-field"><label>学习自驱力</label><div class="slider-group"><input type="range" min="1" max="5" step="1" value="3" id="mab-1" oninput="msv(1)"><span class="slider-value" id="msv-1">3</span></div></div>
+          <div class="ability-field"><label>基础能力</label><div class="slider-group"><input type="range" min="1" max="5" step="1" value="3" id="mab-2" oninput="msv(2)"><span class="slider-value" id="msv-2">3</span></div></div>
+          <div class="ability-field"><label>英语能力</label><div class="slider-group"><input type="range" min="1" max="5" step="1" value="3" id="mab-3" oninput="msv(3)"><span class="slider-value" id="msv-3">3</span></div></div>
+          <div class="ability-field"><label>考试能力</label><div class="slider-group"><input type="range" min="1" max="5" step="1" value="3" id="mab-4" oninput="msv(4)"><span class="slider-value" id="msv-4">3</span></div></div>
+          <div class="ability-field"><label>抗压能力</label><div class="slider-group"><input type="range" min="1" max="5" step="1" value="3" id="mab-5" oninput="msv(5)"><span class="slider-value" id="msv-5">3</span></div></div>
+        </div>
+        <div class="form-row" style="margin-top:8px;">
+          <label>实际AP分（可选）</label>
+          <input type="number" id="modalActualScore" min="1" max="5" step="1" placeholder="留空则未知" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:14px;outline:none;">
+        </div>
+        <div style="margin-top:12px;display:flex;gap:6px;">
+          <button class="btn btn-sm btn-block" onclick="modalSaveSubject()">保存</button>
+          <button class="btn btn-sm btn-block btn-outline" onclick="closeStudentModal()">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <script>
+
 // ═══════════════════════════════════════════
 //  CONSTANTS
 // ═══════════════════════════════════════════
@@ -560,7 +592,7 @@ function renderStudentTree() {
   for (var si = 0; si < keys.length; si++) {
     var sn = keys[si];
     var subs = students[sn];
-    h += '<div class="student-node"><div class="student-header" style="cursor:pointer;" onclick="toggleSubList(this)"><div><span class="name">'+esc(sn)+'</span></div><button class="btn-icon danger" onclick="event.stopPropagation();deleteStudent(\''+esc(sn)+'\')">X</button></div><div class="subject-list">';
+    h += '<div class="student-node"><div class="student-header" style="cursor:pointer;" onclick="toggleSubList(this)"><div><span class="name" data-student="+esc(sn)+" style="cursor:pointer;" onclick="showStudentModal(this.dataset.student)">'+esc(sn)+'</span></div><button class="btn-icon danger" onclick="event.stopPropagation();deleteStudent(\''+esc(sn)+'\')">X</button></div><div class="subject-list">';
     for (var sj in subs) {
       if (!subs.hasOwnProperty(sj) || sj === "cls") continue;
       if (currentFilter && sj !== currentFilter) continue;
@@ -1035,7 +1067,90 @@ function renderAll() {
   }
 }
 
+
+var modalCurrentStudent = null;
+var modalCurrentSubject = null;
+
+function showStudentModal(sn) {
+  modalCurrentStudent = sn;
+  modalCurrentSubject = null;
+  document.getElementById('modalStudentName').textContent = sn;
+  document.getElementById('modalEditor').style.display = 'none';
+  var subs = students[sn] || {};
+  var listDiv = document.getElementById('modalSubjectList');
+  listDiv.innerHTML = '';
+  var hasSub = false;
+  for (var sj in subs) {
+    if (sj === 'cls') continue;
+    hasSub = true;
+    var sc = subs[sj];
+    var arr = getScores(sc);
+    var s5 = arr.map(function(v) { return to5r(v); });
+    var pred = predictAP(s5, sj);
+    var item = document.createElement('div');
+    item.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:6px;cursor:pointer;margin-bottom:2px;font-size:13px;';
+    item.onmouseover = function(){this.style.background='#f1f5f9';};
+    item.onmouseout = function(){this.style.background='';};
+    (function(subj) {
+      item.onclick = function() { modalEditSubject(subj); };
+    })(sj);
+    item.innerHTML = '<span style="font-weight:500;">' + esc(sj) + ' <span class="pred-score ' + predClass5(pred.result) + '">' + pred.result + '</span></span>';
+    listDiv.appendChild(item);
+  }
+  if (!hasSub) {
+    listDiv.innerHTML = '<span style="font-size:13px;color:#94a3b8;">暂无科目，请先在左侧添加</span>';
+  }
+  document.getElementById('studentModal').style.display = 'flex';
+}
+
+function closeStudentModal() {
+  document.getElementById('studentModal').style.display = 'none';
+  modalCurrentStudent = null;
+  modalCurrentSubject = null;
+}
+
+function modalEditSubject(sj) {
+  modalCurrentSubject = sj;
+  var sc = students[modalCurrentStudent][sj];
+  if (!sc) return;
+  var arr = getScores(sc);
+  document.getElementById('modalEditSubject').textContent = sj;
+  for (var i = 0; i < 6; i++) {
+    var v = to5r(arr[i]);
+    var sl = document.getElementById('mab-'+i);
+    var sv = document.getElementById('msv-'+i);
+    if (sl) sl.value = v;
+    if (sv) sv.textContent = v;
+  }
+  var act = getActual(sc);
+  var inp = document.getElementById('modalActualScore');
+  if (inp) inp.value = act != null ? act : '';
+  document.getElementById('modalEditor').style.display = 'block';
+}
+
+function msv(i) {
+  var sv = document.getElementById('msv-'+i);
+  var sl = document.getElementById('mab-'+i);
+  if (sv && sl) sv.textContent = sl.value;
+}
+
+function modalSaveSubject() {
+  if (!modalCurrentStudent || !modalCurrentSubject) { alert('请先选择一个科目'); return; }
+  var scores = [];
+  for (var i = 0; i < 6; i++) scores.push(from5(parseInt(document.getElementById('mab-'+i).value, 10)));
+  var actualInp = document.getElementById('modalActualScore');
+  var actualVal = actualInp.value !== '' ? parseInt(actualInp.value, 10) : null;
+  students[modalCurrentStudent][modalCurrentSubject] = {s: scores, a: actualVal ? actualVal*20 : null};
+  saveData();
+  showStudentModal(modalCurrentStudent);
+  modalEditSubject(modalCurrentSubject);
+  renderStudentTree();
+  renderStudentSelect();
+}
+
 init();
+
+</script>
 </script>
 </body>
 </html>
