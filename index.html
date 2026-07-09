@@ -452,7 +452,7 @@ function editSubject(sn, sj) {
     customInput.style.display = 'block';
     customInput.value = sj;
   }
-  const s = getScores(students[sn][sj]);
+  const s = gs(students[sn][sj]);
   for (let i = 0; i < 6; i++) {
     const v = to5r(s[i]);
     document.getElementById('ab-'+i).value = v;
