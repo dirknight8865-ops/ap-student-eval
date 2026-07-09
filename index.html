@@ -217,6 +217,11 @@ table.data td:first-child, table.data th:first-child { text-align: left; }
 // ═══════════════════════════════════════════
 //  CONSTANTS
 // ═══════════════════════════════════════════
+window.onerror = function(msg, url, line) {
+  var el = document.getElementById('results') || document.body;
+  el.innerHTML += '<div style="padding:12px;margin:10px;background:#fef2f2;color:#ef4444;border:1px solid #fecaca;border-radius:8px;font-family:sans-serif;font-size:13px;"><strong>JS ERROR:</strong> ' + msg + ' (line ' + line + ')</div>';
+};
+
 const ABILITIES = ['学习态度','学习自驱力','基础能力','英语能力','考试能力','抗压能力'];
 const CLUSTER_COLORS = [
   { bg:'#3b82f6', light:'#eff6ff' }, { bg:'#ef4444', light:'#fef2f2' },
@@ -283,8 +288,10 @@ let editingSubject = null;
 let barChart = null, radarChart = null, clusterRadarChart = null, standardRadarChart = null;
 
 function init() {
+  try {
   const saved = localStorage.getItem('sra_v4_ap');
-  if (saved) { try { students = JSON.parse(saved); } catch(e) { students = {}; } }
+  if (saved) { try { students = JSON.parse(saved); } catch(e) { students = {}; }
+} }
   // 首次打开自动载入7名学生的数据
   if (Object.keys(students).length === 0) {
     students = JSON.parse(JSON.stringify(EXAMPLE_DATA));
@@ -294,18 +301,23 @@ function init() {
   renderStudentTree();
   onStudentSelect();
   renderAll();
+} catch(e) {
+  var el = document.getElementById('results'); el.innerHTML = '<div style="padding:20px;font-family:sans-serif;"><h2 style="color:red;">Init Error</h2><p>' + e.message + '</p></div>';
 }
 
 function saveData() {
   localStorage.setItem('sra_v4_ap', JSON.stringify(students));
   renderStudentTree();
   renderAll();
+} catch(e) {
+  var el = document.getElementById('results'); el.innerHTML = '<div style="padding:20px;font-family:sans-serif;"><h2 style="color:red;">Init Error</h2><p>' + e.message + '</p></div>';
 }
 
 function getDataPoints() {
   const pts = [];
   for (const [sn, subs] of Object.entries(students)) {
     for (const [sj, scores] of Object.entries(subs)) {
+      if (sj === 'cls') continue;
       pts.push({ name: sn, subject: sj, label: sn+'·'+sj, vector: [...getScores(scores)], actual: getActual(scores) });
     }
   }
