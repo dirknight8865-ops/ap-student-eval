@@ -122,6 +122,14 @@ table.data td:first-child, table.data th:first-child { text-align: left; }
 <div class="app">
   <header>
     <h1>AP Physics C 能力评估 <span class="tag">五分制·预测模型</span></h1>
+    <div style="margin-top:10px;font-size:13px;">
+      <select id="courseFilter" onchange="filterBySubject()" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none;">
+        <option value="">全部科目</option>
+        <option value="AP Physics C: Mechanics">AP Physics C: Mechanics</option>
+        <option value="AP Physics C: Electricity & Magnetism">AP Physics C: E&amp;M</option>
+        <option value="AP Calculus BC">AP Calculus BC</option>
+      </select>
+    </div>
     <p>专为 AP Physics C: Mechanics / E&amp;M 设计 · 输入六项能力自动预测AP得分 <a href="search.html" style="font-size:12px;color:var(--accent);text-decoration:none;margin-left:12px;">🔍 查询页面 →</a></p>
   </header>
   <div class="layout">
@@ -301,6 +309,10 @@ function getDataPoints() {
   return pts;
 }
 
+function filterBySubject() {
+  currentFilter = document.getElementById('courseFilter').value;
+  renderStudentTree();
+}
 function renderStudentSelect() {
   const sel = document.getElementById('studentSelect');
   const cur = sel.value;
@@ -469,6 +481,7 @@ function renderStudentTree() {
       <button class="btn-icon danger" onclick="event.stopPropagation();deleteStudent('${esc(sn)}')">✕</button>
     </div><div class="subject-list">`;
     for (const [sj, sc] of Object.entries(studentSubs)) {
+    if (currentFilter && sj !== currentFilter) continue;
       const s5 = getScores(sc).map(v => to5r(v));
       const pred = predictAP(s5, sj);
       const act = getActual(sc);
