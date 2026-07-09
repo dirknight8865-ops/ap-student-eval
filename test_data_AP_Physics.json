@@ -1,0 +1,94 @@
+{
+  "version": 2,
+  "abilities": [
+    "学习态度",
+    "学习自驱力",
+    "基础能力",
+    "英语能力",
+    "考试能力",
+    "抗压能力"
+  ],
+  "students": {
+    "Wode Wang": {
+      "AP Physics C: Mechanics": [
+        100,
+        100,
+        100,
+        100,
+        80,
+        80
+      ]
+    },
+    "Herbert Cao": {
+      "AP Physics C: Mechanics": [
+        80,
+        60,
+        80,
+        80,
+        80,
+        80
+      ]
+    },
+    "Chan Chan": {
+      "AP Physics C: Mechanics": [
+        60,
+        60,
+        20,
+        20,
+        20,
+        60
+      ]
+    },
+    "Marx Zhao": {
+      "AP Physics C: Mechanics": [
+        60,
+        60,
+        80,
+        80,
+        60,
+        60
+      ]
+    },
+    "Evan Ye": {
+      "AP Physics C: Mechanics": [
+        60,
+        20,
+        40,
+        20,
+        60,
+        100
+      ]
+    },
+    "Jenny Wang": {
+      "AP Physics C: Mechanics": [
+        20,
+        20,
+        40,
+        80,
+        60,
+        20
+      ]
+    },
+    "Lon Li": {
+      "AP Physics C: Mechanics": [
+        60,
+        60,
+        100,
+        80,
+        80,
+        80
+      ]
+    },
+    "Selina Huang": {
+      "AP Calculus BC": [
+        100,
+        80,
+        60,
+        60,
+        40,
+        60
+      ]
+    }
+  },
+  "exportedAt": "2026-07-09"
+}
