@@ -228,6 +228,9 @@ const CLUSTER_COLORS = [
 //  各科目 AP 预测公式
 // ═══════════════════════════════════════════
 const COURSE_FORMULAS = {
+
+function gs(d){return Array.isArray(d)?d:(d&&d.s?d.s:[]);}
+function ga(d){return (d&&!Array.isArray(d)&&d.a!=null)?Math.round(d.a/20):null;}
   "AP Physics C: Mechanics": {
     penaltyRates: [0.10, 0.20, 0.40, 0.40, 0.20, 0.10],
     hasSpecial: true
@@ -455,7 +458,7 @@ function editSubject(sn, sj) {
     document.getElementById('ab-'+i).value = v;
     document.getElementById('sv-'+i).textContent = v;
   }
-  const actualVal = getActual(students[sn][sj]);
+  const actualVal = ga(students[sn][sj]);
   document.getElementById('actualScore').value = actualVal != null ? actualVal : '';
   editingSubject = sj;
   document.getElementById('subjectAddBtn').textContent = '更新';
