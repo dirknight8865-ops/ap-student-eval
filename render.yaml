@@ -3,4 +3,4 @@ services:
     name: ap-student-eval
     env: node
     buildCommand: npm install
-    startCommand: npm start
+    startCommand: node server.js
